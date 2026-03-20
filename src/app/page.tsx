@@ -32,6 +32,40 @@ const GREETINGS = [
   "Let's windsurf!"
 ];
 
+function SplashScreen({ onComplete }: { onComplete: () => void }) {
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 99999, background: '#000', overflow: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+      <video 
+        autoPlay 
+        loop 
+        muted 
+        playsInline 
+        style={{ position: 'absolute', width: '100%', height: '100%', objectFit: 'cover', opacity: 0.4, zIndex: 0 }}
+      >
+        <source src="/splash.mp4" type="video/mp4" />
+      </video>
+      <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', color: '#fff' }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.2 }}>
+          <h1 style={{ fontSize: '56px', fontWeight: 800, letterSpacing: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '20px', marginBottom: '24px' }}>
+            <AudioLines size={48} /> WINDSURF
+          </h1>
+          <p style={{ fontSize: '18px', color: '#d1d5db', marginBottom: '48px', maxWidth: '600px', lineHeight: 1.6, padding: '0 20px' }}>
+            Experience the future of intelligent voice technology. Studio-grade data dashboards curated instantly through seamless natural language processing.
+          </p>
+          <button 
+            onClick={onComplete}
+            style={{ padding: '16px 48px', background: '#fff', color: '#000', border: 'none', borderRadius: '30px', fontSize: '16px', fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 10px 40px rgba(0,0,0,0.8)' }}
+            onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'}
+            onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            Get Started
+          </button>
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
 function AuthScreen({ onLogin }: { onLogin: (user: User | null) => void }) {
   const [isLogin, setIsLogin] = useState(false);
   const [email, setEmail] = useState('');
@@ -383,6 +417,7 @@ function OnboardingCarousel({ onComplete }: { onComplete: () => void }) {
 }
 
 export default function ChatGPTReplica() {
+  const [hasSeenSplash, setHasSeenSplash] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   
@@ -439,6 +474,10 @@ export default function ChatGPTReplica() {
       setHasCompletedOnboarding(true);
     }
   }, []);
+
+  if (!hasSeenSplash) {
+    return <SplashScreen onComplete={() => setHasSeenSplash(true)} />;
+  }
 
   if (!isAuthenticated && !currentUser) {
     return (
