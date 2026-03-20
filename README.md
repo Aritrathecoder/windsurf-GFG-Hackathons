@@ -1,6 +1,6 @@
 # WindSurf - AI-Powered BI Dashboard
 
-Live link: https://wind-surf-henna.vercel.app/
+Live link:https://windsurf-gfg-hackathons.vercel.app/
 
 Intelligent Business Intelligence (BI) system that allows non-technical users to generate fully functional, interactive data dashboards using natural language prompts.
 
