@@ -3,13 +3,13 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getAnalytics, isSupported } from "firebase/analytics";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBgE7iGO9UkrZ_CN3z2jmkZ4ZNyjrBUo6U",
-  authDomain: "rethink-d9f24.firebaseapp.com",
-  projectId: "rethink-d9f24",
-  storageBucket: "rethink-d9f24.firebasestorage.app",
-  messagingSenderId: "777647696952",
-  appId: "1:777647696952:web:43fbadef15c06a59ce8acd",
-  measurementId: "G-ZDYN4W8J08"
+  apiKey: "AIzaSyBzUgUL5crfsz6o5o-WYVlLUS1dapBSgZo",
+  authDomain: "windsurf-24306.firebaseapp.com",
+  projectId: "windsurf-24306",
+  storageBucket: "windsurf-24306.firebasestorage.app",
+  messagingSenderId: "1021326902366",
+  appId: "1:1021326902366:web:e5aaba2848fca7055a60cf",
+  measurementId: "G-MKFS4DMBH5"
 };
 
 // Initialize Firebase
