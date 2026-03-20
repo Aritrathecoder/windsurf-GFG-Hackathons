@@ -40,12 +40,12 @@ Respond with ONLY a flat JSON object:
   ],
   "charts": [
     {
-      "chartType": "bar|line|pie|area|scatter",
+      "chartType": "bar|line|pie|area|scatter|composed|radar|treemap",
       "title": "Title",
       "description": "Short explanation",
       "xAxisKey": "Column for X",
       "yAxisKey": "Column for Y",
-      "colors": ["#4318ff"]
+      "colors": ["#6366f1"]
     }
   ],
   "insights": ["...", "..."],
@@ -56,8 +56,10 @@ Respond with ONLY a flat JSON object:
 CRITICAL RULES:
 1. FOR CHARTS: NEVER use "LIMIT 1". Always return a series of data (e.g., LIMIT 10 or 20) so charts have points to connect.
 2. AGGREGATES: Always use aliases (e.g., SUM(views) as views_total).
-3. If the user asks for "highest", return the TOP 10 highest to show context in a chart.
-4. For time-series, use DATE(timestamp) as column "date".`;
+3. VARIETY: When possible, provide a mix of chart types (Area, Bar, Line) to provide different perspectives on the data.
+4. SCHEMA ADHERENCE: ONLY use columns that exist in the schema. In particular, DO NOT USE "title" as it does not exist. Use "video_id" or "category" instead.
+5. If the user asks for "highest", return the TOP 10 highest to show context in a chart.
+6. For time-series, use DATE(timestamp) as column "date".`;
 
 export async function generateDashboardConfigWithGroq(
   userQuery: string,

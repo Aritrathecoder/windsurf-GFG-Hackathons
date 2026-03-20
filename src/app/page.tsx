@@ -32,6 +32,8 @@ import {
 import WindsurfLogo from '@/components/WindsurfLogo';
 import { auth, googleProvider } from '@/firebase';
 import { onAuthStateChanged, signInWithPopup, signOut, User as FirebaseUser } from 'firebase/auth';
+import DashboardChart from '@/components/DashboardChart';
+import HeroCarousel from '@/components/HeroCarousel';
 
 const BUILDING_MESSAGES = [
   "Scoping Content Performance...",
@@ -125,6 +127,7 @@ export default function WindsurfApp() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showAutoLogoutWarning, setShowAutoLogoutWarning] = useState(false);
   const [autoLogoutCountdown, setAutoLogoutCountdown] = useState(30);
+  const [mounted, setMounted] = useState(false);
   
   const INACTIVITY_LIMIT = 5 * 60 * 1000;
   const lastActivity = useRef(Date.now());
@@ -140,6 +143,7 @@ export default function WindsurfApp() {
     if (typeof window !== 'undefined') {
       const guest = localStorage.getItem('windsurf_guest_mode') === 'true';
       setIsGuest(guest);
+      setMounted(true);
     }
 
     return () => unsubscribe();
@@ -342,6 +346,11 @@ export default function WindsurfApp() {
             </motion.div>
           )}
 
+          {/* 1. HERO CAROUSEL (BEFORE SEARCH) */}
+          {!resultDashboard && !isAnalyzing && !isBuilding && !showBuildPrompt && (
+            <HeroCarousel />
+          )}
+
           {/* 2. SEARCH BAR */}
           <div style={{ width: '100%', maxWidth: '800px', margin: '0 auto 60px', transition: 'all 0.5s ease' }}>
             <div className="cg-input-container" style={{ position: 'relative', borderRadius: '24px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', padding: '16px 24px', boxShadow: '0 20px 50px rgba(0,0,0,0.5)', alignItems: 'center', display: 'flex' }}>
@@ -406,7 +415,7 @@ export default function WindsurfApp() {
               </motion.div>
             )}
 
-            {resultDashboard === "dynamic" && dynamicDashboard && (
+            {resultDashboard === "dynamic" && dynamicDashboard && mounted && (
               <motion.div 
                 key="result" 
                 initial={{ opacity: 0 }} 
@@ -415,9 +424,9 @@ export default function WindsurfApp() {
                 style={{ 
                   position: 'fixed',
                   top: 0, left: 0, right: 0, bottom: 0,
-                  background: '#f4f6fa', 
+                  background: 'linear-gradient(135deg, #0a0e1a 0%, #05070a 100%)', 
                   padding: '30px 50px', 
-                  color: '#1a1a2e',
+                  color: '#f8fafc',
                   zIndex: 9999,
                   overflowY: 'auto',
                   fontFamily: "'Inter', sans-serif"
@@ -426,31 +435,37 @@ export default function WindsurfApp() {
                 {/* ── HEADER ── */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
                   <div>
-                    <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#1a1a2e', margin: 0 }}>{dynamicDashboard.title}</h2>
-                    <p style={{ color: '#8e8ea0', fontSize: '13px', margin: '4px 0 0' }}>Windsurf AI • {lastRefreshed}</p>
+                    <h2 style={{ fontSize: '28px', fontWeight: 800, color: '#fff', margin: 0, letterSpacing: '-0.5px' }}>{dynamicDashboard.title}</h2>
+                    <p style={{ color: '#94a3b8', fontSize: '13px', margin: '4px 0 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#6366f1', display: 'inline-block' }} />
+                      Windsurf AI • {lastRefreshed}
+                    </p>
                   </div>
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <button onClick={() => { setIsLightMode(false); setDynamicDashboard(null); setResultDashboard(null); }} style={{ padding: '8px 18px', borderRadius: '10px', background: '#fff', border: '1px solid #e0e0e0', color: '#333', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}>✕ Close</button>
-                    <button onClick={() => window.print()} style={{ padding: '8px 18px', borderRadius: '10px', background: '#4318ff', border: 'none', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}><Download size={14} /> Export</button>
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <button onClick={() => { setIsLightMode(false); setDynamicDashboard(null); setResultDashboard(null); }} style={{ padding: '10px 20px', borderRadius: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', fontSize: '13px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}>✕ Close</button>
+                    <button onClick={() => window.print()} style={{ padding: '10px 24px', borderRadius: '12px', background: '#6366f1', border: 'none', color: '#fff', fontSize: '13px', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 20px rgba(99, 102, 241, 0.3)' }}><Download size={16} /> Export</button>
                   </div>
                 </div>
 
                 {/* ── SUMMARY ── */}
-                <div style={{ background: '#fff', borderRadius: '14px', padding: '20px 24px', marginBottom: '20px', border: '1px solid #eee' }}>
-                  <p style={{ fontSize: '14px', color: '#555', lineHeight: 1.6, margin: 0 }}><strong style={{ color: '#4318ff' }}>Summary:</strong> {dynamicDashboard.summary}</p>
+                <div style={{ background: 'rgba(255,255,255,0.03)', backdropFilter: 'blur(20px)', borderRadius: '20px', padding: '24px', marginBottom: '24px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <p style={{ fontSize: '15px', color: '#cbd5e1', lineHeight: 1.6, margin: 0 }}><strong style={{ color: '#6366f1' }}>Summary:</strong> {dynamicDashboard.summary}</p>
                 </div>
 
                 {/* ── METRICS ── */}
                 {dynamicDashboard.metrics && dynamicDashboard.metrics.length > 0 && (
-                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(dynamicDashboard.metrics.length, 4)}, 1fr)`, gap: '16px', marginBottom: '24px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(dynamicDashboard.metrics.length, 4)}, 1fr)`, gap: '20px', marginBottom: '32px' }}>
                     {dynamicDashboard.metrics.map((m: any, idx: number) => (
-                      <div key={idx} style={{ background: '#fff', borderRadius: '14px', padding: '20px', border: '1px solid #eee' }}>
-                        <p style={{ color: '#8e8ea0', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 8px' }}>{m.label}</p>
-                        <h3 style={{ fontSize: '26px', fontWeight: 800, color: '#1a1a2e', margin: 0 }}>{m.value}</h3>
+                      <div key={idx} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '20px', padding: '24px', border: '1px solid rgba(255,255,255,0.05)', transition: 'transform 0.2s' }}>
+                        <p style={{ color: '#94a3b8', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 12px' }}>{m.label}</p>
+                        <h3 style={{ fontSize: '32px', fontWeight: 800, color: '#fff', margin: 0, fontFamily: "'JetBrains Mono', monospace" }}>{m.value}</h3>
                         {m.change && (
-                          <span style={{ fontSize: '12px', fontWeight: 600, color: m.trend === 'up' ? '#22c55e' : '#ef4444', marginTop: '6px', display: 'inline-block' }}>
-                            {m.trend === 'up' ? '↑' : '↓'} {m.change}
-                          </span>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '10px' }}>
+                            <span style={{ fontSize: '12px', fontWeight: 700, color: m.trend === 'up' ? '#22c55e' : '#f43f5e', background: m.trend === 'up' ? 'rgba(34, 197, 94, 0.1)' : 'rgba(244, 63, 94, 0.1)', padding: '2px 8px', borderRadius: '6px' }}>
+                              {m.trend === 'up' ? '↑' : '↓'} {m.change}
+                            </span>
+                            <span style={{ fontSize: '11px', color: '#64748b' }}>vs last period</span>
+                          </div>
                         )}
                       </div>
                     ))}
@@ -459,83 +474,60 @@ export default function WindsurfApp() {
 
                 {/* ── AI INSIGHTS ── */}
                 {dynamicDashboard.insights && dynamicDashboard.insights.length > 0 && (
-                  <div style={{ background: '#fff', borderRadius: '14px', padding: '20px 24px', marginBottom: '24px', border: '1px solid #eee' }}>
-                    <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#4318ff', textTransform: 'uppercase', margin: '0 0 14px', letterSpacing: '0.04em' }}>AI Insights</h4>
-                    <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div style={{ background: 'rgba(99, 102, 241, 0.05)', borderRadius: '20px', padding: '24px', marginBottom: '32px', border: '1px solid rgba(99, 102, 241, 0.1)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                      <Sparkles size={18} style={{ color: '#6366f1' }} />
+                      <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#6366f1', textTransform: 'uppercase', margin: 0, letterSpacing: '0.05em' }}>AI Insights</h4>
+                    </div>
+                    <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                       {dynamicDashboard.insights.map((insight: string, idx: number) => (
-                        <li key={idx} style={{ fontSize: '13px', color: '#444', lineHeight: 1.5, paddingLeft: '16px', borderLeft: '3px solid #4318ff' }}>{insight}</li>
+                        <li key={idx} style={{ fontSize: '14px', color: '#94a3b8', lineHeight: 1.5, padding: '12px 16px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', borderLeft: '3px solid #6366f1' }}>{insight}</li>
                       ))}
                     </ul>
                   </div>
                 )}
 
                 {/* ── CHARTS ── */}
-                <div style={{ display: 'grid', gridTemplateColumns: dynamicDashboard.charts?.length === 1 ? '1fr' : 'repeat(2, 1fr)', gap: '20px', marginBottom: '30px' }}>
-                  {dynamicDashboard.charts?.map((chart: any, i: number) => {
-                    // Normalize data: convert string numbers to real numbers
-                    const normalizedData = (chart.data || []).map((row: any) => {
-                      const newRow: any = {};
-                      for (const [key, val] of Object.entries(row)) {
-                        const num = Number(val);
-                        newRow[key] = val !== '' && val !== null && !isNaN(num) && typeof val !== 'boolean' ? num : val;
-                      }
-                      return newRow;
-                    });
-                    const isSingleRow = normalizedData.length === 1;
-                    const effectiveType = isSingleRow ? 'bar' : chart.chartType;
-                    // Find the right data key: prefer yAxisKey, then find any numeric column
-                    const getDataKey = () => {
-                      if (chart.yAxisKey && normalizedData[0] && chart.yAxisKey in normalizedData[0]) return chart.yAxisKey;
-                      if (!normalizedData[0]) return '';
-                      return Object.keys(normalizedData[0]).find(k => k !== chart.xAxisKey && typeof normalizedData[0][k] === 'number') || Object.keys(normalizedData[0]).find(k => k !== chart.xAxisKey) || '';
-                    };
-
-                    return (
-                      <div key={i} style={{ background: '#fff', borderRadius: '14px', padding: '24px', border: '1px solid #eee', position: 'relative' }}>
-                        <button onClick={() => downloadChartData(chart)} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: '#aaa', cursor: 'pointer' }} title="Download CSV"><Download size={16} /></button>
-                        <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#1a1a2e', margin: '0 0 4px' }}>{chart.title}</h4>
-                        <p style={{ fontSize: '12px', color: '#8e8ea0', margin: '0 0 20px' }}>{chart.description}</p>
-                        <div style={{ height: '300px', width: '100%' }}>
-                          <ResponsiveContainer width="100%" height="100%">
-                            {effectiveType === 'pie' || effectiveType === 'donut' ? (
-                              <PieChart>
-                                <Pie data={normalizedData} innerRadius={effectiveType === 'donut' ? 50 : 0} outerRadius={90} paddingAngle={4} dataKey={getDataKey()} nameKey={chart.xAxisKey}>
-                                  {normalizedData.map((_: any, index: number) => (
-                                    <Cell key={index} fill={['#4318ff','#22c55e','#f59e0b','#ef4444','#6ad2ff','#8b5cf6'][index % 6]} />
-                                  ))}
-                                </Pie>
-                                <Tooltip />
-                                <Legend />
-                              </PieChart>
-                            ) : effectiveType === 'bar' ? (
-                              <BarChart data={normalizedData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                                <XAxis dataKey={chart.xAxisKey} stroke="#999" fontSize={11} tickLine={false} />
-                                <YAxis stroke="#999" fontSize={11} />
-                                <Tooltip />
-                                <Bar dataKey={getDataKey()} fill="#4318ff" radius={[6, 6, 0, 0]} />
-                              </BarChart>
-                            ) : (
-                              <LineChart data={normalizedData}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                                <XAxis dataKey={chart.xAxisKey} stroke="#999" fontSize={11} tickLine={false} />
-                                <YAxis stroke="#999" fontSize={11} />
-                                <Tooltip />
-                                <Line type="monotone" dataKey={getDataKey()} stroke="#4318ff" strokeWidth={2} dot={{ r: 3 }} />
-                              </LineChart>
-                            )}
-                          </ResponsiveContainer>
+                <div style={{ display: 'grid', gridTemplateColumns: dynamicDashboard.charts?.length === 1 ? '1fr' : 'repeat(2, 1fr)', gap: '24px', marginBottom: '32px' }}>
+                  {dynamicDashboard.charts?.map((chart: any, i: number) => (
+                    <div key={i} style={{ background: 'rgba(255,255,255,0.02)', borderRadius: '24px', padding: '30px', border: '1px solid rgba(255,255,255,0.05)', position: 'relative' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+                        <div>
+                          <h4 style={{ fontSize: '18px', fontWeight: 700, color: '#fff', margin: '0 0 6px' }}>{chart.title}</h4>
+                          <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>{chart.description}</p>
                         </div>
+                        <button onClick={() => downloadChartData(chart)} style={{ background: 'rgba(255,255,255,0.05)', border: 'none', color: '#94a3b8', cursor: 'pointer', width: '36px', height: '36px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} title="Download CSV"><Download size={18} /></button>
                       </div>
-                    );
-                  })}
+                      <div style={{ height: '350px', width: '100%' }}>
+                        <DashboardChart config={{
+                          ...chart,
+                          colors: chart.colors || ['#6366f1', '#8b5cf6', '#ec4899', '#f43f5e', '#f97316'],
+                          data: (chart.data || []).map((row: any) => {
+                            const newRow: any = {};
+                            for (const [key, val] of Object.entries(row)) {
+                              const num = Number(val);
+                              newRow[key] = val !== '' && val !== null && !isNaN(num) && typeof val !== 'boolean' ? num : val;
+                            }
+                            return newRow;
+                          })
+                        }} />
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
                 {/* ── SQL ── */}
-                <details style={{ marginBottom: '40px' }}>
-                  <summary style={{ fontSize: '12px', fontWeight: 600, color: '#999', cursor: 'pointer' }}>Show SQL Query</summary>
-                  <pre style={{ fontSize: '11px', color: '#555', background: '#fff', padding: '16px', borderRadius: '10px', marginTop: '10px', border: '1px solid #eee', overflowX: 'auto', whiteSpace: 'pre-wrap' }}>{dynamicDashboard.sql}</pre>
-                </details>
+                <div style={{ marginTop: '40px', paddingBottom: '40px' }}>
+                  <details style={{ cursor: 'pointer' }}>
+                    <summary style={{ fontSize: '13px', fontWeight: 600, color: '#64748b', listStyle: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <ChevronRight size={14} />
+                      View Technical SQL Logic
+                    </summary>
+                    <div style={{ marginTop: '16px', borderRadius: '16px', background: '#000', border: '1px solid rgba(255,255,255,0.05)', padding: '20px', overflowX: 'auto' }}>
+                      <pre style={{ fontSize: '13px', color: '#a497f6', margin: 0, fontFamily: "'JetBrains Mono', monospace", lineHeight: 1.6 }}>{dynamicDashboard.sql}</pre>
+                    </div>
+                  </details>
+                </div>
 
               </motion.div>
             )}
