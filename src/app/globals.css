@@ -240,6 +240,9 @@ body {
   color: var(--text-primary);
   font-size: 16px;
   outline: none;
+  width: 100%;
+  min-width: 0;
+  padding: 4px 0;
 }
 .cg-input::placeholder {
   color: #8e8e8e;
@@ -501,4 +504,75 @@ body {
 }
 .auth-footer-link a:hover {
   text-decoration: underline;
+}
+.cg-suggestion-btn {
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: #b4b4b4;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cg-suggestion-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Custom scrollbar for content area */
+.cg-content::-webkit-scrollbar {
+  width: 8px;
+}
+.cg-content::-webkit-scrollbar-thumb {
+  background-color: rgba(255,255,255,0.05);
+  border-radius: 4px;
+}
+.cg-content::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255,255,255,0.1);
+}
+.cg-suggestion-chip {
+  padding: 10px 18px;
+  background: #272727;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 30px;
+  color: #b4b4b4;
+  font-size: 13.5px;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.cg-suggestion-chip:hover {
+  background: #333;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  transform: translateY(-1px);
 }

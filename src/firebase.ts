@@ -19,8 +19,10 @@ const googleProvider = new GoogleAuthProvider();
 
 export { app, auth, googleProvider };
 
-isSupported().then((supported) => {
-  if (supported) {
-    const analytics = getAnalytics(app);
-  }
-});
+if (typeof window !== "undefined") {
+  isSupported().then((supported) => {
+    if (supported) {
+      const analytics = getAnalytics(app);
+    }
+  });
+}

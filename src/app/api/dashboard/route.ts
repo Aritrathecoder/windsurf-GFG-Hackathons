@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { executeQuery, getSchemaInfo } from '@/lib/database';
-import { generateDashboardConfig, DashboardResponse, ChartConfig } from '@/lib/gemini';
+import { generateDashboardConfigWithGroq, DashboardResponse, ChartConfig } from '@/lib/groq';
 
 export async function POST(request: NextRequest) {
   try {
-    const { query } = await request.json();
+    const { query, checkOnly } = await request.json();
 
     if (!query || typeof query !== 'string' || query.trim().length === 0) {
       return NextResponse.json(
@@ -13,9 +13,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!process.env.GEMINI_API_KEY) {
+    if (checkOnly) {
+      return NextResponse.json({ status: 'ok', message: 'Ready to analyze' });
+    }
+
+    if (!process.env.GROQ_API_KEY) {
       return NextResponse.json(
-        { error: 'Gemini API key is not configured. Please set GEMINI_API_KEY in your .env.local file.' },
+        { error: 'Groq API key is not configured.' },
         { status: 500 }
       );
     }
@@ -23,8 +27,8 @@ export async function POST(request: NextRequest) {
     // Step 1: Get database schema for context
     const schema = getSchemaInfo();
 
-    // Step 2: Send to Gemini to get SQL + chart config
-    const dashboardConfig: DashboardResponse = await generateDashboardConfig(query, schema);
+    // Step 2: Send to Groq to get SQL + chart config
+    const dashboardConfig: DashboardResponse = await generateDashboardConfigWithGroq(query, schema);
 
     if (dashboardConfig.error) {
       return NextResponse.json(
@@ -38,18 +42,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Step 3: Execute the SQL query
+    console.log('Gemini generated SQL:', dashboardConfig.sql);
     let data;
     try {
       data = executeQuery(dashboardConfig.sql);
     } catch (sqlError) {
+      console.error('SQL Execution Error:', sqlError);
       // If primary SQL fails, try to give useful feedback
       return NextResponse.json(
         {
           error: `SQL Error: ${(sqlError as Error).message}`,
           title: 'Query Error',
           summary: 'The generated SQL query had an error. Please try rephrasing your question.',
-          sql: dashboardConfig.sql,
-          charts: [],
           data: { columns: [], rows: [] },
           insights: ['The AI-generated query encountered an error. This might be due to ambiguous column references or complex aggregation. Try simplifying your question.'],
         },
@@ -75,6 +79,7 @@ export async function POST(request: NextRequest) {
       summary: dashboardConfig.summary,
       sql: dashboardConfig.sql,
       charts: chartsWithData,
+      metrics: (dashboardConfig as any).metrics || [],
       data: data,
       insights: dashboardConfig.insights,
       query: query,

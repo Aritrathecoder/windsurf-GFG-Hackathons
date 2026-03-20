@@ -4,20 +4,26 @@ import fs from 'fs';
 import Papa from 'papaparse';
 
 const DB_PATH = path.join(process.cwd(), 'data', 'business.db');
-const CSV_PATH = path.join(process.cwd(), 'data', 'sales_data.csv');
+// New CSV Path
+const YOUTUBE_CSV_PATH = path.join(process.cwd(), '3. YouTube Content Creation', 'YouTube Content Creation.csv');
 
 let db: Database.Database | null = null;
 
 export function getDatabase(): Database.Database {
   if (db) return db;
 
+  if (!fs.existsSync(path.join(process.cwd(), 'data'))) {
+    fs.mkdirSync(path.join(process.cwd(), 'data'), { recursive: true });
+  }
+
   const dbExists = fs.existsSync(DB_PATH);
   db = new Database(DB_PATH);
   
-  // Enable WAL mode for better performance
   db.pragma('journal_mode = WAL');
 
-  if (!dbExists) {
+  // Even if DB exists, sometimes we want to refresh if table is missing
+  const tableCheck = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='youtube_stats'").get();
+  if (!tableCheck) {
     initializeDatabase(db);
   }
 
@@ -25,68 +31,75 @@ export function getDatabase(): Database.Database {
 }
 
 function initializeDatabase(database: Database.Database) {
-  // Create the sales table
+  console.log('💎 Initializing YouTube Statistics Database...');
+  
+  // Create the youtube_stats table
   database.exec(`
-    CREATE TABLE IF NOT EXISTS sales (
+    CREATE TABLE IF NOT EXISTS youtube_stats (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      date TEXT NOT NULL,
+      timestamp TEXT NOT NULL,
+      video_id TEXT NOT NULL,
+      category TEXT NOT NULL,
+      language TEXT NOT NULL,
       region TEXT NOT NULL,
-      product_category TEXT NOT NULL,
-      product_name TEXT NOT NULL,
-      units_sold INTEGER NOT NULL,
-      unit_price REAL NOT NULL,
-      revenue REAL NOT NULL,
-      cost REAL NOT NULL,
-      profit REAL NOT NULL,
-      salesperson TEXT NOT NULL,
-      customer_segment TEXT NOT NULL,
-      channel TEXT NOT NULL
+      duration_sec INTEGER,
+      views INTEGER,
+      likes INTEGER,
+      comments INTEGER,
+      shares INTEGER,
+      sentiment_score REAL,
+      ads_enabled BOOLEAN
     );
   `);
 
-  // Create indexes for common queries
+  // Create indexes for YouTube queries
   database.exec(`
-    CREATE INDEX IF NOT EXISTS idx_sales_date ON sales(date);
-    CREATE INDEX IF NOT EXISTS idx_sales_region ON sales(region);
-    CREATE INDEX IF NOT EXISTS idx_sales_category ON sales(product_category);
-    CREATE INDEX IF NOT EXISTS idx_sales_channel ON sales(channel);
-    CREATE INDEX IF NOT EXISTS idx_sales_segment ON sales(customer_segment);
-    CREATE INDEX IF NOT EXISTS idx_sales_salesperson ON sales(salesperson);
+    CREATE INDEX IF NOT EXISTS idx_yt_timestamp ON youtube_stats(timestamp);
+    CREATE INDEX IF NOT EXISTS idx_yt_category ON youtube_stats(category);
+    CREATE INDEX IF NOT EXISTS idx_yt_region ON youtube_stats(region);
+    CREATE INDEX IF NOT EXISTS idx_yt_language ON youtube_stats(language);
   `);
 
-  // Load CSV data
-  const csvContent = fs.readFileSync(CSV_PATH, 'utf-8');
-  const parsed = Papa.parse(csvContent, {
-    header: true,
-    skipEmptyLines: true,
-    dynamicTyping: true,
-  });
+  // Load YouTube CSV data
+  if (fs.existsSync(YOUTUBE_CSV_PATH)) {
+    console.log('📂 Loading YouTube CSV data (this may take a few seconds)...');
+    const csvContent = fs.readFileSync(YOUTUBE_CSV_PATH, 'utf-8');
+    const parsed = Papa.parse(csvContent, {
+      header: true,
+      skipEmptyLines: true,
+      dynamicTyping: true,
+    });
 
-  const insertStmt = database.prepare(`
-    INSERT INTO sales (date, region, product_category, product_name, units_sold, unit_price, revenue, cost, profit, salesperson, customer_segment, channel)
-    VALUES (@date, @region, @product_category, @product_name, @units_sold, @unit_price, @revenue, @cost, @profit, @salesperson, @customer_segment, @channel)
-  `);
+    const insertStmt = database.prepare(`
+      INSERT INTO youtube_stats (timestamp, video_id, category, language, region, duration_sec, views, likes, comments, shares, sentiment_score, ads_enabled)
+      VALUES (@timestamp, @video_id, @category, @language, @region, @duration_sec, @views, @likes, @comments, @shares, @sentiment_score, @ads_enabled)
+    `);
 
-  const insertMany = database.transaction((rows: Record<string, unknown>[]) => {
-    for (const row of rows) {
-      insertStmt.run(row);
-    }
-  });
+    const insertMany = database.transaction((rows: any[]) => {
+      for (const row of rows) {
+        // Clean boolean values for SQLite
+        if (row.ads_enabled === 'True' || row.ads_enabled === true) row.ads_enabled = 1;
+        else row.ads_enabled = 0;
+        
+        insertStmt.run(row);
+      }
+    });
 
-  insertMany(parsed.data as Record<string, unknown>[]);
-  console.log(`✅ Loaded ${parsed.data.length} rows into the database`);
+    insertMany(parsed.data);
+    console.log(`✅ Loaded ${parsed.data.length} YouTube content records into the database`);
+  } else {
+    console.warn('⚠️ YouTube CSV file not found at:', YOUTUBE_CSV_PATH);
+  }
 }
 
 export function executeQuery(sql: string): { columns: string[]; rows: Record<string, unknown>[] } {
   const database = getDatabase();
   
-  // Security: Only allow SELECT statements
   const trimmedSql = sql.trim().toUpperCase();
   if (!trimmedSql.startsWith('SELECT')) {
     throw new Error('Only SELECT queries are allowed for security reasons.');
   }
 
-  // Prevent dangerous operations
   const forbidden = ['DROP', 'DELETE', 'INSERT', 'UPDATE', 'ALTER', 'CREATE', 'EXEC', 'ATTACH'];
   for (const word of forbidden) {
     if (trimmedSql.includes(word)) {
@@ -100,7 +113,7 @@ export function executeQuery(sql: string): { columns: string[]; rows: Record<str
     const columns = rows.length > 0 ? Object.keys(rows[0]) : [];
     return { columns, rows };
   } catch (error) {
-    throw new Error(`SQL execution error: ${(error as Error).message}`);
+    throw new Error(`SQL execution error: ${(error as Error).message}\nQuery: ${sql}`);
   }
 }
 
@@ -118,26 +131,26 @@ export function getSchemaInfo(): string {
     
     // Add sample data
     const sampleRows = database.prepare(`SELECT * FROM ${table.name} LIMIT 3`).all();
-    schema += `Sample rows: ${JSON.stringify(sampleRows, null, 2)}\n\n`;
+    schema += `Sample data: ${JSON.stringify(sampleRows)}\n\n`;
     
-    // Add distinct values for categorical columns
-    const categoricalCols = ['region', 'product_category', 'customer_segment', 'channel', 'salesperson'];
-    for (const colName of categoricalCols) {
-      if (columns.some(c => c.name === colName)) {
-        const distinctValues = database.prepare(`SELECT DISTINCT ${colName} FROM ${table.name} ORDER BY ${colName}`).all() as any[];
-        schema += `Distinct ${colName} values: ${distinctValues.map((v) => v[colName]).join(', ')}\n`;
+    // Categorical analysis
+    const categories = ['category', 'region', 'language'];
+    for (const cat of categories) {
+      if (columns.some(c => c.name === cat)) {
+        const distinct = database.prepare(`SELECT DISTINCT ${cat} FROM ${table.name} LIMIT 20`).all() as any[];
+        schema += `Unique ${cat} sample: ${distinct.map(d => d[cat]).join(', ')}\n`;
       }
     }
     
-    // Add date range
-    if (columns.some(c => c.name === 'date')) {
-      const dateRange = database.prepare(`SELECT MIN(date) as min_date, MAX(date) as max_date FROM ${table.name}`).get() as { min_date: string; max_date: string };
-      schema += `Date range: ${dateRange.min_date} to ${dateRange.max_date}\n`;
+    // Date context
+    const dateCol = columns.find(c => c.name === 'timestamp' || c.name === 'date');
+    if (dateCol) {
+      const dates = database.prepare(`SELECT MIN(${dateCol.name}) as start, MAX(${dateCol.name}) as end FROM ${table.name}`).get() as any;
+      schema += `Timeline range: ${dates.start} to ${dates.end}\n`;
     }
 
-    // Add row count
     const count = database.prepare(`SELECT COUNT(*) as count FROM ${table.name}`).get() as { count: number };
-    schema += `Total rows: ${count.count}\n`;
+    schema += `Data volume: ${count.count} records\n`;
   }
   
   return schema;
