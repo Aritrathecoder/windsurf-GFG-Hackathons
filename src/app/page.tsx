@@ -5,9 +5,10 @@ import {
   Plus, Search, Image as ImageIcon, 
   LayoutGrid, Globe, Terminal, FolderOpen, Briefcase, 
   MapPin, UserSquare, Gift, ChevronDown, Mic, AudioLines, Edit,
-  EyeOff, Mail, Phone, Play, PlayCircle, Podcast, Video, AlertCircle, ArrowLeft
+  EyeOff, Mail, Phone, Play, PlayCircle, Podcast, Video, AlertCircle, ArrowLeft, ArrowRight, Sparkles
 } from 'lucide-react';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // --- FIREBASE IMPORTS ---
 import { auth, googleProvider } from '../firebase';
@@ -322,6 +323,65 @@ function AuthScreen({ onLogin }: { onLogin: (user: User | null) => void }) {
   );
 }
 
+function OnboardingCarousel({ onComplete }: { onComplete: () => void }) {
+  const [slide, setSlide] = useState(0);
+
+  const handleNext = () => {
+    if (slide === 0) setSlide(1);
+    else {
+      localStorage.setItem('windsurf_onboarding_done', 'true');
+      onComplete();
+    }
+  };
+
+  return (
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'var(--bg-main)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
+       <div style={{ width: '100%', maxWidth: '600px', background: '#212121', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', padding: '40px', color: '#ececec', display: 'flex', flexDirection: 'column', gap: '24px', position: 'relative', overflow: 'hidden' }}>
+          
+         <div style={{ flex: 1, minHeight: '220px' }}>
+         <AnimatePresence mode="wait">
+         {slide === 0 ? (
+           <motion.div key="slide0" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
+             <h2 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '16px', color: '#fff' }}>Business Problem Statement</h2>
+             <p style={{ fontSize: '15px', lineHeight: 1.6, marginBottom: '16px', color: '#ececec' }}>
+               Build an intelligent system that allows non-technical users to generate fully functional, interactive data dashboards using only natural language prompts.
+             </p>
+             <p style={{ fontSize: '14px', lineHeight: 1.6, color: '#b4b4b4' }}>
+               The solution must take a plain-English request (e.g., &quot;Show me the monthly sales revenue for Q3 broken down by region and highlight the top-performing product category&quot;), query the underlying data, select the most appropriate chart types, and render a cohesive, interactive dashboard in real-time.
+             </p>
+           </motion.div>
+         ) : (
+           <motion.div key="slide1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.3 }}>
+             <h2 style={{ fontSize: '24px', fontWeight: 600, marginBottom: '16px', color: '#fff' }}>Target Persona</h2>
+             <h3 style={{ fontSize: '18px', fontWeight: 500, marginBottom: '12px', color: '#a497f6' }}>The Non-Technical Executive (CXO)</h3>
+             <p style={{ fontSize: '15px', lineHeight: 1.6, color: '#b4b4b4' }}>
+               They know what business questions they want to ask but do not know how to write database queries or configure BI visualization settings.
+             </p>
+           </motion.div>
+         )}
+         </AnimatePresence>
+         </div>
+
+         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px' }}>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: slide === 0 ? '#fff' : 'rgba(255,255,255,0.2)', transition: 'background 0.3s' }} />
+              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: slide === 1 ? '#fff' : 'rgba(255,255,255,0.2)', transition: 'background 0.3s' }} />
+            </div>
+            <button 
+              onClick={handleNext}
+              style={{ background: '#fff', color: '#000', border: 'none', padding: '10px 20px', borderRadius: '8px', fontSize: '14px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', transition: 'opacity 0.2s' }}
+              onMouseOver={e => e.currentTarget.style.opacity = '0.8'}
+              onMouseOut={e => e.currentTarget.style.opacity = '1'}
+            >
+              {slide === 0 ? <>Next <ArrowRight size={16} /></> : <>Start Focus Session <Sparkles size={16} /></>}
+            </button>
+         </div>
+
+       </div>
+    </div>
+  );
+}
+
 export default function ChatGPTReplica() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -372,6 +432,14 @@ export default function ChatGPTReplica() {
 
   const displayName = currentUser?.displayName || currentUser?.email?.split('@')[0] || currentUser?.phoneNumber || 'Guest';
 
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
+
+  useEffect(() => {
+    if (localStorage.getItem('windsurf_onboarding_done') === 'true') {
+      setHasCompletedOnboarding(true);
+    }
+  }, []);
+
   if (!isAuthenticated && !currentUser) {
     return (
       <AuthScreen 
@@ -381,6 +449,10 @@ export default function ChatGPTReplica() {
         }} 
       />
     );
+  }
+
+  if (isAuthenticated && !hasCompletedOnboarding) {
+     return <OnboardingCarousel onComplete={() => setHasCompletedOnboarding(true)} />
   }
 
   return (
