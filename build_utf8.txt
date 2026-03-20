@@ -1,0 +1,29 @@
+
+> insight-ai@0.1.0 build
+> next build
+
+▲ Next.js 16.2.0 (Turbopack)
+- Environments: .env.local
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 4.1s
+  Running TypeScript ...
+  Finished TypeScript in 2.5s ...
+  Collecting page data using 5 workers ...
+  Generating static pages using 5 workers (0/6) ...
+  Generating static pages using 5 workers (1/6) 
+  Generating static pages using 5 workers (2/6) 
+  Generating static pages using 5 workers (4/6) 
+✓ Generating static pages using 5 workers (6/6) in 314ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /api/dashboard
+└ ƒ /api/suggestions
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
